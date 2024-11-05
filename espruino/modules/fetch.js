@@ -1,26 +1,42 @@
-        function fetch(url,opts){
-                                                                                console.log('fetch',url);
+
+
+/*
+
+fetch.proxy requires the global variable proxy to be set specifying the proxyy url
+
+
+
+*/
+
+
+
+
+
+function fetch(url,opts,params){
+                                                                                fetch.debug && console.log('fetch',url);
               var v             = fetch.opts(url,opts);
               var opts          = v.opts;
               var body          = v.body;
-                                                                                //console.json(opts);
-              var ctx           = fetch.req.create();
+                                                                                fetch.debug>1 && console.json(opts);
+              var ctx           = fetch.req.create(params);
+              ctx.url           = url;
               ctx.request       = request.espruino(opts,res=>fetch.response(ctx,res));
-              fetch.error(ctx,'request');
+              
+              fetch.error(ctx,'req');
               ctx.request.end(body);
               
               return ctx.req.promise;
               
         }//fetch
         
-        fetch.debug   = false;
-        
         fetch.response=function(ctx,res){
-                                                                                //console.log('fetch.response');
-                                                                                //console.json(res.headers);
+                                                                                fetch.debug && console.log('fetch.response',ctx.url);
+                                                                                fetch.debug>1 && console.json(res.headers);
               ctx.response    = res;
+              
               fetch.data(ctx);
-              fetch.error(ctx,'response');
+              
+              fetch.error(ctx,'res');
               fetch.close(ctx);
               fetch.res.create(ctx);
               
@@ -28,20 +44,25 @@
         
   //:
   
-        fetch.proxy=function(url,opts){
-                                                                                console.log('fetch.proxy',url);
-              var v             = fetch.opts(url,opts);
-              var opts          = v.opts;
-              var body          = v.body;
+        fetch.proxy=function(url,opts,params){
+                                                                                fetch.debug && console.log('fetch.proxy',url);
+              params                = params||{};
               
-              body              = JSON.stringify({url,opts,body});
+              var v                 = fetch.opts(url,opts);
+              var opts              = v.opts;
+              var body              = v.body;
               
-              var proxy_opts    = {method:'post',body};
-              var proxy         = fetch.opts(fetch.proxy.url,proxy_opts);
+              var proxy_params      = {url,opts,body};
+              proxy_params.buffer   = params.buffer||256;
+              proxy_params.time     = params.time||100;
+              
+              body                  = JSON.stringify(proxy_params);
+              var proxy_opts        = {method:'post',body};
+              var proxy             = fetch.opts(fetch.proxy.url,proxy_opts);
                                                                                 //console.json(proxy.opts);
-              var ctx           = fetch.req.create();
-              
-              ctx.request       = request.espruino(proxy.opts,res=>fetch.proxy.response(ctx,res));
+              var ctx               = fetch.req.create(params);
+              ctx.url               = url;
+              ctx.request           = request.espruino(proxy.opts,res=>fetch.proxy.response(ctx,res));
               
               fetch.error(ctx,'req');
               ctx.request.end(proxy.body);
@@ -50,45 +71,51 @@
               
         }//fetch.proxy
         
-        fetch.proxy.debug   = false;
-        
         fetch.proxy.response=function(ctx,res){
-                                                                                console.log('fetch.proxy.response');
+                                                                                fetch.debug && console.log('fetch.proxy.response',ctx.url);
               ctx.response    = res;
+              
+              var hdr   = '';
               
               function ondata(data){
               
-                    ctx.body   += data;
                     if(!ctx.obj.headers){
-                          var i   = ctx.body.indexOf('--hdrs--');
-                          if(i!=-1){
-                                var hdrs          = ctx.body.slice(0,i);
-                                ctx.obj.headers   = JSON.parse(hdrs);
-                                                                                //console.log('fetch.proxy.response.headers');
-                                                                                console.json(ctx.obj.headers);
-                                ctx.body    = ctx.body.slice(i+8);
-                                ctx.req.resolve(ctx.obj);
+                          hdr    += data;
+                          var i   = hdr.indexOf('--hdrs--');
+                          if(i==-1){
+                                return;
                           }
+                          var hdrs          = hdr.slice(0,i);
+                          ctx.obj.headers   = JSON.parse(hdrs);
+                                                                                //console.log('fetch.proxy.response.headers');
+                                                                                fetch.debug && console.json(ctx.obj.headers);
+                          ctx.req.resolve(ctx.obj);
+                          data    = hdr.slice(i+8);
+                    }
+                    
+                    if(ctx.on.data){
+                          ctx.on.data(data);
+                    }else{
+                          ctx.body   += data;
                     }
                     
               }//ondata
               
               res.on('data',ondata);
-              fetch.error(ctx,'response');
+              
+              fetch.error(ctx,'res');
               fetch.close(ctx);
               fetch.res.create(ctx,'proxy');
               
         }//response
         
-        fetch.proxy.url   = url.proxy;
-        
+        fetch.proxy.url     = proxy;
+        fetch.debug         = false;
   //:
-  
         fetch.parse=function(url,opts){
                                                                                 //console.log('fetch.parse');
                                                                                 //console.log(url);
                                                                                 //console.json(opts);
-                                                                                
               var params        = URL.parse(url);
                                                                                 //console.json(params);
                                                                                 
@@ -110,14 +137,13 @@
               
         }//parse
         
-        fetch.parse2=function(url,opts){
-        }//parse2
-        
-        
         fetch.opts=function(url,opts){
         
               opts        = opts||{};
-              var opts2   = {headers:{}};
+              var opts2   = {
+                    method    : 'GET',
+                    headers   : {}
+              };
               
               fetch.parse(url,opts2);
               
@@ -154,6 +180,9 @@
                                                                                 console.log('fetch.timeout');
                     var err   = new Error('fetch timeout');
                     ctx.req.reject(err);
+                    if(ctx.on.timeout){
+                          ctx.on.timeout();
+                    }
                     
               }//timeout
               
@@ -167,8 +196,10 @@
                                                                                 console.log(`fetch.${type}.error`);
                                                                                 console.json(err);
                     clearTimeout(ctx.timer);
-                    //ctx.onclose && ctx.res.removeEventListener(ctx.close);
                     ctx[type].reject(err);
+                    if(ctx.on.error){
+                          ctx.on.error(err);
+                    }
                     
               }//error
               
@@ -178,21 +209,29 @@
         
         fetch.data=function(ctx){
         
-              function data(data){
+              function ondata(data){
               
-                    ctx.body    += data;
+                    if(ctx.on.data){
+                          ctx.on.data(data);
+                    }else{
+                          ctx.body    += data;
+                    }
                     
               }//ondata
               
-              ctx.response.on('data',data);
+              ctx.response.on('data',ondata);
               
         }//data
         
         fetch.close=function(ctx){
         
               ctx.close=function(){
-                                                                                console.log('fetch.response.close',ctx.body.length);
+                                                                                fetch.debug && console.log('fetch.response.close',ctx.body.length);
                     ctx.res.resolve(ctx.body);
+                    if(ctx.on.close){
+                          ctx.on.close(ctx.body);
+                    }
+                    
                     
               }//onclose
               
@@ -203,12 +242,21 @@
         fetch.req   = {};
         fetch.res   = {};
         
-        fetch.req.create=function(){
+        fetch.req.create=function(params){
         
+              params            = params||{};
+              
               var ctx           = {};
               ctx.req           = {};
               ctx.res           = {};
               ctx.body          = '';
+              
+              ctx.on            = {};
+              ctx.on.data       = params.ondata;
+              ctx.on.error      = params.onerror;
+              ctx.on.close      = params.onclose;
+              ctx.on.timeout    = params.timeout;
+              
               ctx.req.promise   = new Promise((res,rej)=>(ctx.req.resolve=res,ctx.req.reject=rej));
               fetch.timeout(ctx);
               return ctx;
@@ -218,10 +266,14 @@
         fetch.res.create=function(ctx,proxy){
         
               clearTimeout(ctx.timer);
-              var promise   = new Promise((res,rej)=>(ctx.res.resolve=res,ctx.res.reject=rej));
-              ctx.obj       = {};
-              ctx.obj.text=function(){return promise};
-              ctx.obj.json=function(){return ctx.obj.text().then(JSON.parse)};
+              
+              var promise         = new Promise((res,rej)=>(ctx.res.resolve=res,ctx.res.reject=rej));
+              
+              ctx.obj             = {};
+              ctx.obj.text        = function(){return promise};
+              ctx.obj.json        = function(){return ctx.obj.text().then(JSON.parse)};
+              ctx.obj.complete    = function(){return promise};
+              
               !proxy && ctx.req.resolve(ctx.obj);
               
         }//create
@@ -240,7 +292,6 @@
               return req;
               
         }//espruino
-        
         
         request.moddable=function(){
         
