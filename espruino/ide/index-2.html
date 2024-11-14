@@ -1,0 +1,1147 @@
+<!doctype html>
+<html>
+    <!-- https://github.com/kolbertv/espuino-rollup-babel/issues -->
+    <head style="display: block;">
+        <link href='https://fonts.googleapis.com/css?family=Pacifico' rel='stylesheet'>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
+        </link>
+        <style>
+html{height:100%}
+                body {height:calc(100% - 16px);display:flex;flex-direction:column}
+                input {font-size:16px;padding:5px 10px}
+                select {font-size:16px;padding:5px 10px}
+                #hdr {margin-bottom:10px}
+                #hdr-btns {display:flex}
+                h3 {color:blue}
+                #view {flex:1;display:flex;overflow:hidden}
+                #editor {width:50%}
+                #view-panel {flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+                #terminal {flex:1}
+                #file {width:300px}
+                #url {width:300px}
+        </style>
+    </head>
+    <body>
+        <div id="hdr">
+            <h1 style='margin:0 50px;font-family:Pacifico;color:blue;letter-spacing:2px;font-size:45px;'>
+espruino web ide
+            </h1>
+            <div id="hdr-btns">
+                <span style="margin-right:50px">
+                </span>
+                <input value="load webcontainer" type="button" style="margin-right:50px">
+                </input>
+                <input value="connect" type="button" style="width:100px;margin-right:50px">
+                </input>
+                <input value="build" type="button">
+                </input>
+                <input value="send flash" type="button">
+                </input>
+                <input value="send ram" type="button" style="margin-right:20px">
+                </input>
+                <input value="clear" type="button">
+                </input>
+                <input value="copy" type="button">
+                </input>
+                <input value="paste" type="button" style="margin-right:20px">
+                </input>
+                <input value="file load" type="button">
+                </input>
+                <input value="file save" type="button" style="margin-right:20px">
+                </input>
+                <input value="test" type="button" style="margin-right:20px">
+                </input>
+                <select id="system" style="margin-right:20px">
+                    <option>
+echo on
+                    </option>
+                    <option>
+echo off
+                    </option>
+                    <option>
+wipe
+                    </option>
+                    <option>
+status
+                    </option>
+                    <option>
+reset
+                    </option>
+                    <option>
+reset(erase)
+                    </option>
+                    <option>
+reboot
+                    </option>
+                    <option>
+save
+                    </option>
+                    <option>
+load
+                    </option>
+                    <option>
+dump
+                    </option>
+                    <option>
+test
+                    </option>
+                    <option>
+wifi status
+                    </option>
+                    <option>
+wifi disconnect
+                    </option>
+                    <option>
+wifi AP status
+                    </option>
+                    <option>
+wifi stop AP
+                    </option>
+                    <option>
+wifi connect
+                    </option>
+                    <option>
+storage list
+                    </option>
+                    <option>
+storage erase all
+                    </option>
+                </select>
+                <input id=filename>
+                <input value='upload file' type=button>
+                <input value='upload erase' type=button>
+                <input id=url>
+                <input value='upload url' type=button style='margin-right:50px'>
+                <input value="x" type=button>
+                </input>
+            </div>
+        </div>
+        <div id="view">
+            <div id="editor">
+            </div>
+            <div id="view-panel">
+                <div id="terminal">
+                </div>
+            </div>
+        </div>
+        <script type="module" style="display: none;">
+console.clear();
+
+                import {Terminal} from 'https://cdn.jsdelivr.net/npm/@xterm/xterm/+esm';
+                import {FitAddon} from 'https://cdn.jsdelivr.net/npm/@xterm/addon-fit/+esm';
+                
+                import ace from 'https://cdn.jsdelivr.net/npm/ace-builds/+esm';
+                import {WebContainer} from 'https://cdn.jsdelivr.net/npm/@webcontainer/api/+esm';
+                var ext    =  await fetch('https://raw.githubusercontent.com/javascript-2020/ext-code/main/loader.js').then(res=>res.text().then(txt=>eval(txt)));
+                
+                var [$,datatype]   = await ext.load.libs('js/dom/$','js/core/datatype');
+                
+                
+                
+                
+                var editor;
+                var webcontainer;
+                var term;
+                var fit;
+                var com;
+                var encoder;
+                var writer;
+                var decoder;
+                var reader;
+                
+                
+                
+                var esc         = String.fromCharCode(27);
+                var echo_off    = String.fromCharCode(16);
+                
+                
+                
+                var output;
+                
+                
+                
+                setTimeout(init,50);
+                
+                function init(){
+                
+                      filemod         = filemod();
+                      
+                      initdom();
+                      //load_web_container();
+                      
+                      log('ready');
+                      log('not connected');
+                      
+                }//init
+                
+                
+                function initdom(){   //c
+                
+                      $('[value="load webcontainer"]').onclick    = load_web_container;
+                      
+                      $('[value=connect]').onclick                = connect;
+                      
+                      $('[value=build]').onclick                  = build.start;
+                      $('[value="send flash"]').onclick           = e=>send(e,'bootcde');
+                      $('[value="send ram"]').onclick             = e=>send(e,'ram');
+                      
+                      $('[value=clear]').onclick                  = clear;
+                      $('[value=copy]').onclick                   = copy;
+                      $('[value=paste]').onclick                  = paste;
+                      
+                      $('[value="file load"]').onclick            = filemod.load;
+                      $('[value="file save"]').onclick            = filemod.save;
+                      
+                      $('[value=test]').onclick                   = test;
+                      
+                      $('#system').onclick                        = system;
+                      
+                      $('[value="upload file"]').onclick          = upload.file;
+                      $('[value="upload erase"]').onclick         = upload.erase;
+                      $('[value="upload url"]').onclick           = upload.url;
+                      
+                      $('[value=x]').onclick                      = ()=>term.clear();
+                      
+                      
+                      setup_editor();
+                      
+                      output    = $('#output');
+                      
+                      
+                      var terminal      = $('#terminal');
+                      term              = new Terminal({
+                            //fontWeight  : 700,
+                            //fontSize    :'16px'
+                      });
+                      fit   = new FitAddon();
+                      
+                      term.open(terminal);
+                      term.onKey(({key})=>write.key(key));
+                      term.attachCustomKeyEventHandler(keydown);
+                      term.streamWrite    = ()=>new WritableStream({write:data=>term.write(data)});
+                      resize();
+                      
+                }//initdom
+                
+  //:
+  
+                function system(e){
+                
+                      var select    = $('#system');
+                      
+                      if(!select.dataset.open){
+                            select.dataset.open   = 'open';
+                            return;
+                      }
+                      select.dataset.open   = '';
+                      
+                      var opt   = select.value;
+                      
+                      switch(opt){
+                      
+                        case 'wifi connect'   : system.wificonnect(e);        return;
+                        
+                      }//switch
+                      
+                      if(e.shiftKey){
+                            clear.term();
+                      }
+                      
+                      term.writeln(opt);
+                      write('echo(false);');
+                      var js    = code[opt];
+                      send.ram(js);
+                      write('echo(true);');
+                      
+                }//system
+                
+                system.wificonnect=function(e){
+                
+                      editor.setValue(code['wifi connect'],-1);
+                      
+                }//wificonnect
+                
+                
+                async function test(){
+                
+                      //snapshot.save();
+                      var buf   = await webcontainer.fs.readFile('build/bundle.js');
+                      var txt   = new TextDecoder().decode(buf);
+                      console.log(txt);
+                      
+                }//test
+                
+                
+                function clear(e){
+                
+                      if(e.shiftKey){
+                            clear.term();
+                      }else{
+                            editor.setValue('',-1);
+                      }
+                      
+                }//clear
+                
+                clear.term=function(){
+                
+                      term.clear();
+                      
+                }//term
+                
+                function copy(){
+                
+                      var txt   = editor.getValue();
+                      navigator.clipboard.writeText(txt);
+                      
+                }//copy
+                
+                
+                async function paste(){
+                
+                      var txt   = await navigator.clipboard.readText();
+                      editor.setValue(txt,-1);
+                      
+                }//paste
+                
+                
+                function resize(){
+                                                                                                      //\e[8;40;80t
+                      var {cols,rows}   = proposeDimensions();
+                      
+                      term.resize(cols,rows);
+                      
+                      /*
+                      var str   = esc+'[8;'+rows+';'+cols+'t\r\n';
+                      var buf   = encoder.encode(str);console.log(buf);
+                      writer.write(buf);
+                      */
+                      
+                      
+                      function proposeDimensions(){
+                      //https://github.com/xtermjs/xterm.js/blob/master/addons/addon-fit/src/FitAddon.ts
+                      
+                            var dims        = term._core._renderService.dimensions;
+                            var scrollbar   = 14;
+                            var par         = term.element.parentElement;
+                            var cols        = Math.floor((par.offsetWidth-scrollbar)/dims.css.cell.width);
+                            var rows        = Math.floor(par.offsetHeight/dims.css.cell.height);
+                                                                                                      //console.log(cols,rows);
+                            return {cols,rows};
+                            
+                      }//proposeDimensions
+                      
+                }//resize
+                
+                
+                function keydown(arg){
+                
+                      if(arg.ctrlKey && arg.code==='KeyC' && arg.type==='keydown'){
+                      	    var selection   = term.getSelection();
+                      	    if(selection){
+                      	          navigator.clipboard.writeText(selection);
+                          		    return false;
+                      	    }
+                      }
+                      if(arg.ctrlKey && arg.code==='KeyV' && arg.type==='keydown'){
+                            navigator.clipboard.readText().then(text=>term.write(text));
+                      };
+                      return true;
+                      
+                }//keydown
+                
+                
+                function setup_editor(){
+                
+                      editor    = document.querySelector('#editor');
+                      editor    = ace.edit(editor);
+                      editor.setShowInvisibles(false);
+                      editor.setShowPrintMargin(false);
+                      editor.setPrintMarginColumn(false);
+                      editor.setBehavioursEnabled(false);
+                      editor.setDisplayIndentGuides(false);
+                      editor.setScrollSpeed(2);
+                      editor.setFontSize(16);
+                      editor.session.setOptions({tabSize:2,useSoftTabs:true});
+                      //editor.setGhostText('\n\nctrl-enter - run & autosave\nctrl-s - save\nctrl-del - delete');
+                      editor.focus();
+                      
+                }//setup_editor
+                
+                
+                function log(){
+                
+                      var str   = [...arguments].join(' ');
+                      term.writeln(str);
+                      console.log(str);
+                      
+                }//log
+                
+                
+                log.clear=function(){output.replaceChildren()};
+                log.throw=function(str){log(str);throw str};
+                
+                
+                var file    = {};
+                
+                file.load=function(){
+                
+                      var input         = document.createElement('input');
+                      input.type        = 'file';
+                      input.onchange    = load;
+                      input.click();
+                      
+                      async function load(){
+                      
+                            var file    = input.files[0];
+                            var txt     = await file.text();
+                            editor.setValue(txt,-1);
+                            
+                      }//load
+                      
+                }//load
+                
+                
+                file.save=function(){
+                
+                      var txt       = editor.getValue();
+                      var blob      = new Blob([txt]);
+                      var url       = window.URL.createObjectURL(blob);
+                      var a         = document.createElement('a');
+                      a.href        = url;
+                      a.download    = cur.file.name || 'espruino.js';
+                      a.click();
+                      
+                }//file.save
+                
+                
+                var upload    = {};
+                
+                upload.file=function(){
+                
+                      var filename    = $('#filename').value;
+                      var txt         = editor.getValue();
+                      var b64         = window.btoa(txt);
+                      
+                      write('print()');
+                      write(`require('Storage').write('${filename}',atob('${b64}'));`);
+                      write(`print('upload ${filename} complete');`);
+                      write('print()');
+                      
+                }//file
+                
+                upload.erase=function(){
+                
+                      var filename    = $('#filename').value;
+                      
+                      write('print()');
+                      write(`require("Storage").erase(${filename})`);
+                      write(`print('erase ${filename} complete');`);
+                      write('print()');
+                      
+                }//erase
+                
+                upload.url=async function(){
+                
+                      var filename    = $('#filename').value;
+                      var url         = $('#url').value;
+                      var txt         = await fetch(url).then(res=>res.text());
+                      var b64         = window.btoa(txt);
+                      
+                      write('print()');
+                      write(`require('Storage').write('${filename}',atob('${b64}'));`);
+                      write(`print('upload ${filename} complete');`);
+                      write('print()');
+                      
+                }//url
+                
+                
+                
+                
+  //term:
+  
+  
+  
+  //serial:
+  
+                async function connect(e){console.log('connect');
+                
+                      var usbVendorId   =  6790;
+                      
+                      if(e.shiftKey){
+                      
+                            com   = await navigator.serial.requestPort().then(port=>com=port).catch(err=>Promise.resolve({err}));
+                            
+                      }else{
+                      
+                            var list    = await navigator.serial.getPorts();console.log(list);
+                            com         = list.find(port=>port.getInfo().usbVendorId==usbVendorId);
+                            if(!com){
+                                  com   = await navigator.serial.requestPort({usbVendorId}).then(port=>com=port).catch(err=>Promise.resolve({err}));
+                            }
+                            
+                      }
+                      if(com.err){
+                            console.log(com.err);
+                            return;
+                      }
+                      console.log(com.getInfo());
+                      
+                      
+                      await com.open({baudRate:115200});
+                      
+                      encoder   = new TextEncoder();
+                      writer    = com.writable.getWriter();
+                      decoder   = new TextDecoder();
+                      reader    = com.readable.getReader();
+                      reader.read().then(read);
+                      
+                      resize();
+                      write('print(JSON.stringify(process.env,null,4));');
+                      write('reset();');
+                      
+                      var btn       = $('[value=connect]');
+                      btn.value     = 'disconnect';
+                      btn.onclick   = disconnect;
+                      
+                      //writer.releaseLock();
+                      
+                }//connect
+                
+                async function disconnect(){
+                
+                      await reader.cancel();
+                      await writer.close();
+                      await com.close();
+                      
+                      var btn       = $('[value=disconnect]');
+                      btn.value     = 'connect';
+                      btn.onclick   = connect;
+                      
+                }//disconnect
+                
+                
+                async function write(str){
+                
+                      str             = echo_off+str+'\n';
+                      var buf         = encoder.encode(str);
+                      await writer.write(buf);
+                      
+                }//write
+                
+                write.key=function(key){
+                
+                      var buf   = encoder.encode(key);
+                      writer.write(buf);
+                      
+                }//write.key
+                
+                
+                async function read({done,value}){
+                
+                      if(done){
+                            return;
+                      }
+                      var result;
+                      if(read.fn){
+                            result    = read.fn(value);
+                      }
+                      if(result!==false){
+                            term.write(value);
+                      }
+                      
+                      reader.read().then(read);
+                      
+                }//read
+                
+  //:
+  
+  
+  
+                async function send(e,type){
+                                                                                log('send to esp32');
+                      if(e.shiftKey){
+                            clear.term();
+                      }
+                      
+                      type    = type||'bootcde';
+                      
+                      //var js      = await webcontainer.fs.readFile('build/bundle.js','utf8');
+                      
+                      var js      = editor.getValue();
+                      
+                      read.fn       = process;
+                      write('reset();');
+                      
+                      
+                      async function process(value){
+                      
+                            var txt   = decoder.decode(value);
+                            if(txt.endsWith('>')){
+                                  read.fn   = null;
+                                  send[type](js);
+                            }
+                            
+                      }//process
+                      
+                      
+                }//send
+                
+                send.transform=function(code){
+                
+                      var b64   = window.btoa(code);
+                      return b64;
+                      
+                      
+                      var code2   = '';
+                      [...code].forEach((c,i)=>{
+                      
+                            var v   = c.charCodeAt(0);
+                            switch(v){
+                            
+                              case 10   : code2  +='\\n';       break;
+                              default   : code2  += c;
+                              
+                            }//switch
+                            
+                      });
+                      return code2;
+                      
+                }//transform
+                
+                send.bootcde=function(js){
+                
+                      var code    = send.transform(js);
+                      
+                      write('print();');
+                      var time    = new Date()/1000;
+                      write(`setTime(${time});`);
+                      write('E.setTimeZone(1);');
+                      write(`require('Storage').write('.bootcde',atob('${code}'));`);
+                      write('load();');
+                      
+                }//bootcde
+                
+                send.ram=async function(js){
+                
+                      //var code    = send.transform(js);
+                      
+                      //write('echo(0);');
+                      write('print();');
+                      
+                      //var buf         = encoder.encode(js);
+                      //await writer.write(buf);
+                      
+                      write(js);
+                      //write('echo(1);');
+                      
+                }//ram
+                
+                
+  //webcontainer:
+  
+  
+                const files = {
+                      'package.json': {
+                            file: {
+                                  contents: `
+                                        {
+                                              "name": "espuino-rollup-babel-2",
+                                              "version": "1.0.0",
+                                              "scripts": {
+                                                    "build": "rollup -c"
+                                              }
+                                        }
+                                  `,
+                            },
+                      },
+                      'rollup.config.mjs': {
+                            file: {
+                                  contents: `
+                                        import terser from "@rollup/plugin-terser";
+                                        import resolve from "@rollup/plugin-node-resolve";
+                                        import {babel} from "@rollup/plugin-babel";
+                                        
+                                        export default {
+                                              input: "src/main.js",
+                                              output: [
+                                                    {
+                                                          file: "build/bundle.js",
+                                                          format: "cjs"
+                                                    },
+                                                    {
+                                                          file: "build/bundle.min.js",
+                                                          format: "cjs",
+                                                          plugins: [terser()]
+                                                    }
+                                              ],
+                                              plugins: [resolve(),babel({babelHelpers:'bundled'})],
+                                        };
+                                  `
+                            }
+                      },
+                      'babel.config.json': {
+                            file: {
+                                  contents: `
+                                        {
+                                              "presets": ["@babel/preset-env"],
+                                              "comments": false
+                                        }
+                                  `
+                            }
+                      },
+                      'snapshot-save.mjs': {
+                            file: {
+                                  contents: `
+                                        import {snapshot} from '@webcontainer/snapshot';
+                                        import fs from 'fs';
+                                        
+                                        var bin   = await snapshot('.');
+                                        fs.writeFileSync('snapshot',bin);
+                                  `
+                            }
+                      }
+                };
+                
+                
+                
+                
+                async function load_web_container(){
+                                                                                        log('webcontainer boot');
+                      webcontainer    = await WebContainer.boot();
+                                                                                        log('complete');
+                                                                                        
+                                                                                        log('create file system');
+                      await webcontainer.mount(files);
+                      await webcontainer.fs.mkdir('src');
+                      await webcontainer.fs.mkdir('build');
+                                                                                        log('complete');
+                      await install();
+                                                                                        log('ready');
+                }//load_web_container
+                
+                
+                async function install(){
+                                                                                          log('install dependencies');
+                      var install   = [
+                            'install',
+                            '@webcontainer/snapshot',
+                            '@babel/preset-env',
+                            'rollup','@rollup/plugin-babel','@rollup/plugin-node-resolve','@rollup/plugin-terser'
+                      ];
+                      const installProcess    = await webcontainer.spawn('npm',install);
+                      installProcess.output.pipeTo(term.streamWrite());
+                      var code    = await installProcess.exit;
+                      if(code!=0)log.throw('install failed');
+                                                                                          log('install complete');
+                }//install
+                
+                
+                async function build(){
+                                                                                          log('build');
+                      var process   = await webcontainer.spawn('npm',['run','build']);
+                      process.output.pipeTo(term.streamWrite());
+                      var code      = await process.exit;
+                      if(code!=0)log.throw('build failed');
+                                                                                          log('build complete',code);
+                }//build
+                
+                build.start=async function(){
+                                                                                log('build start');
+                      var txt   = editor.getValue();
+                      await webcontainer.fs.writeFile('/src/main.js',txt);
+                      build();
+                      
+                }//start
+                
+                
+                
+                var snapshot    = {};
+                
+                snapshot.save=async function(){
+                
+                      var process   = await webcontainer.spawn('node',['snapshot-save.mjs']);
+                      process.output.pipeTo(term.streamWrite());
+                      var code      = await process.exit;
+                      if(code!=0)log.throw('snapshot failed');
+                      var buf   = await webcontainer.fs.readFile('snapshot');
+                      var bin   = bytes.reduce((acc,byte)=>acc+=String.fromCharCode(byte),'');
+                      var b64   = btoa(bin);
+                      console.log(b64.length);
+                      
+                }//snapshot
+                
+  //:
+  //filemod:
+  
+                function filemod(){
+                
+                  var obj   = {};
+                  
+                  
+                        obj.local   = filemod.local();
+                        
+                        
+                        var cur;
+                        
+                        
+                        obj.cur=function(file){
+                        
+                              if(file){
+                                    cur   = file;
+                              }
+                              return cur;
+                              
+                        }//cur
+                        
+                        
+                        obj.save=function(){
+                        
+                              var txt   = editor.getValue();
+                              
+                              if(!cur){
+                                    filemod.local.save(cur,txt);
+                                    return;
+                              }
+                              
+                              filemod[cur.fileType].save(cur,txt);
+                              
+                        }//save
+                        
+                        
+                  return obj;
+                  
+                }//filemod
+                
+                
+                filemod.local=function(){
+                
+                  var obj   = {};
+                  
+                  
+                        obj.save=function(file,txt){
+                        
+                              var name      = 'espruino.js';
+                              if(file){
+                                    name    = file.name;
+                              }
+                              
+                              var blob      = new Blob([txt]);
+                              var url       = window.URL.createObjectURL(blob);
+                              var a         = document.createElement('a');
+                              a.href        = url;
+                              a.download    = name;
+                              a.click();
+                              
+                        }//save
+                        
+                        
+                        obj.load=function(){
+                        
+                              var input   = document.createElement('input');
+                              input.type    = 'file';
+                              input.onchange    = load;
+                              input.click();
+                              
+                              async function load(){
+                              
+                                    var blob    = input.files[0];
+                                    var txt     = await blob.text();
+                                    var file    = {fileType:'local',name:blob.name};
+                                    filemod.cur(file);
+                                    
+                              }//load
+                              
+                        }//load
+                        
+                        
+                  return obj;
+                  
+                }//local
+                
+                
+  //code:
+  
+                var code    = {};
+                code.echo   = {};
+    //test:-
+                code.test   = String.raw`
+                
+                      console.log('\n===   test   ===\n');
+                `;
+    //blank:-
+                code.blank   = String.raw`
+                
+                      var storage     = require('Storage');
+                      var wifi        = require('Wifi');
+                      console.json    = v=>console.log(JSON.stringify(v,null,4));
+                      
+                      
+                      console.log('\n\n   ===   wipe.espruino.js   ===   \n\n');
+                      
+                      
+                      
+                      
+                      wifi.stopAP(()=>console.log('AP stopped'));
+                      wifi.save('clear');
+                      
+                      wifi.disconnect(()=>console.log('wifi disconnected'));
+                      
+                      
+                      storage.eraseAll();
+                      storage.list();
+                      console.json(storage.getStats());
+                      
+                      
+                              `;
+                              
+                              code.status   = String.raw`
+                              
+                      var wifi        = require('Wifi');
+                      var storage     = require('Storage');
+                      console.json    = v=>console.log(JSON.stringify(v,null,4));
+                      
+                      
+                      
+                      console.log('   ===   status.espruino.js   ===   ');
+                      
+                      
+                      
+                      console.log('\n\n   ---   process   ---   \n\n');
+                      
+                      
+                      
+                      console.log('process.env');
+                      console.json(process.env);
+                      console.log('\n\n');
+                      
+                      
+                      
+                      console.log('process.memory');
+                      console.json(process.memory(true));
+                      console.log('\n\n');
+                      
+                      
+                      
+                      console.log('process.version');
+                      console.json(process.version);
+                      console.log('\n\n');
+                      
+                      
+                      
+                      
+                      console.log('\n\n   ---   wifi status   ---   \n\n');
+                      
+                      
+                      
+                      var status    = wifi.getStatus(status=>{
+                      
+                            console.log('wifi.getStatus.callback');
+                            console.json(status);
+                            console.log('\n\n');
+                            
+                      });
+                      console.log('wifi.getStatus');
+                      console.json(status);
+                      console.log('\n\n');
+                      
+                      
+                      
+                      var details   = wifi.getDetails(details=>{
+                      
+                            console.log('wifi.getDetails.callback','\n\n');
+                            console.json(details);
+                            
+                      });
+                      console.log('--  wifi details --','\n\n');
+                      console.json(details);
+                      console.log('\n\n');
+                      
+                      
+                      
+                      var info    = wifi.getIP((err,info)=>{
+                      
+                            console.log('wifi.getIP.callback','\n\n');
+                            if(err){
+                                  console.json(err);
+                            }else{
+                                  console.json(info);
+                            }
+                            
+                      });
+                      console.log('wifi.getIP','\n\n');
+                      console.json(info);
+                      
+                      
+                      
+                      var details   = wifi.getAPDetails(details=>{
+                      
+                            console.log('wifi.getAPDetails.callback','\n\n');
+                            console.json(details);
+                            
+                      });
+                      console.log('wifi.getAPDetails','\n\n');
+                      console.json(details);
+                      console.log('\n\n');
+                      
+                      
+                      
+                      var info    = wifi.getAPIP((err,info)=>{
+                      
+                            console.log('wifi.getAPIP.callback','\n\n');
+                            console.json(info);
+                            console.log('\n\n');
+                            
+                      });
+                      console.log('wifi.getAPIP','\n\n');
+                      console.json(info);
+                      console.log('\n\n');
+                      
+                      
+                      
+                      
+                      
+                      console.log('\n\n   ---   storage status   ---   \n\n');
+                      
+                      
+                      var free    = storage.getFree();
+                      console.log('storage.getFree','\n\n');
+                      console.json(free);
+                      console.log('\n\n');
+                      
+                      
+                      
+                      var stats   = storage.getStats();
+                      console.log('storage.getStats','\n\n');
+                      console.json(stats);
+                      console.log('\n\n');
+                      
+                      
+                      var list    = storage.list();
+                      console.log('storage.list','\n\n');
+                      console.json(list);
+                      console.log('\n\n');
+                      
+                `;
+    //reset:-
+                code.reset    = String.raw`
+                
+                      reset();
+                      
+                `;
+    //reset(erase):-
+                code['reset(erase)']   = String.raw`
+                
+                      reset(true);
+                      
+                `;
+    //reboot:-
+                code.reboot   = String.raw`
+                
+                      E.reboot();
+                      
+                `;
+    //echo-on:-
+                code['echo on']    = String.raw`
+                
+                      echo(true);
+                      
+                `;
+    //echo-off:-
+                code['echo off']   = String.raw`
+                
+                      echo(false);
+                      
+                `;
+    //save:-
+                code.save   = String.raw`
+                
+                      save();
+                      
+                `;
+    //load:-
+                code.load   = String.raw`
+                
+                      load();
+                      
+                `;
+    //dump:-
+                code.dump   = String.raw`
+                
+                      dump();
+                      
+                `;
+    //:
+    //wifi-status:-
+                code['wifi status']   = String.raw`
+                
+                      console.log('wifi.getStatus()');
+                      var info    = require('Wifi').getStatus(info=>console.log(JSON.stringify(info,null,4)));
+                      console.log(JSON.stringify(info,null,4));
+                      
+                `;
+    //wifi-disconnect:-
+                code['wifi disconnect']   = String.raw`
+                
+                      console.log('wifi.disconnect');
+                      require('Wifi').disconnect(()=>console.log('disconnected'));
+                      
+                `;
+    //wifi-ap-status:-
+                code['wifi AP status']   = String.raw`
+                
+                      console.log('wifi.getAPDetails()');
+                      var details   = require('Wifi').getAPDetails(details=>console.log(JSON.stringify(details,null,4)));
+                      console.log(JSON.stringify(details,null,4));
+                      
+                `;
+    //wifi-stop-ap:-
+                code['wifi stop AP']    = String.raw`
+                
+                      console.log('wifi.stopAP()');
+                      require('Wifi').stopAP(()=>console.log('AP stopped'));
+                      
+                `;
+    //wifi-connect:-
+                code['wifi connect']    = String.raw`
+                
+                      var ssid       = '';
+                      var password   = '';
+                      
+                      console.log('wifi.connect :',ssid,password);
+                      
+                      require('Wifi').connect(ssid,{password},function(err){
+                      
+                            if(err){
+                                  console.log(JSON.stringify(err,null,4));
+                                  return;
+                            }
+                            console.log('wifi.connect complete');
+                            
+                      });
+                      
+                `;
+    //:
+    //storage-list:-
+                code['storage list']    = String.raw`
+                
+                      var list    = require('Storage').list();
+                      console.log('storage.list','\n\n');
+                      console.log(JSON.stringify(list,null,4));
+                      console.log('\n\n');
+                      
+                `;
+    //storage-erase-all:-
+                code['storage erase all']    = String.raw`
+                
+                      require('Storage').eraseAll();
+                      var list    = require('Storage').list();
+                      console.log('storage.list','\n\n');
+                      console.log(JSON.stringify(list,null,4));
+                      console.log('\n\n');
+                      
+                `;
+                
+                
+        </script>
+    </body>
+</html>
