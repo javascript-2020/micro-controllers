@@ -1,6 +1,20 @@
 
 
 
+
+/*
+
+//espruino/ws.js:d
+
+17-11-24
+
+
+var WebSocket    =  require('ws');
+
+
+*/
+
+
         
         var strChr = String.fromCharCode;
         
