@@ -7,13 +7,18 @@
 
 03-11-24
 
+
+notes:
+
+requires wsmod : https://github.com/javascript-2020/libs/blob/main/nodejs/wsmod/wsmod.js
+
+
 */
 
 
                 var port        = process.argv[2] || 3003;
                 
-                                  require('base');
-                var wsmod       = require(base.libs.node+'wsmod/v2.0/wsmod-v2.0.js');
+                var wsmod       = require('wsmod.js');
                 wsmod           = wsmod();
                 
                 var http        = require('http');
