@@ -2,7 +2,13 @@
 
 /*
 
-fetch.proxy requires the global variable proxy to be set specifying the proxyy url
+//espruino.fetch:d
+
+17-11-24
+
+
+
+fetch.proxy requires the global variable FETCH_PROXY to be set specifying the proxy url
 
 
 
