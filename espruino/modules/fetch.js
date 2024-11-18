@@ -11,8 +11,7 @@ fetch.proxy requires the global variable proxy to be set specifying the proxyy u
 
 
 
-
-function fetch(url,opts,params){
+        function fetch(url,opts,params){
                                                                                 fetch.debug && console.log('fetch',url);
               var v             = fetch.opts(url,opts);
               var opts          = v.opts;
@@ -20,7 +19,7 @@ function fetch(url,opts,params){
                                                                                 fetch.debug>1 && console.json(opts);
               var ctx           = fetch.req.create(params);
               ctx.url           = url;
-              ctx.request       = request.espruino(opts,res=>fetch.response(ctx,res));
+              ctx.request       = fetch.request(opts,res=>fetch.response(ctx,res));
               
               fetch.error(ctx,'req');
               ctx.request.end(body);
@@ -62,7 +61,7 @@ function fetch(url,opts,params){
                                                                                 //console.json(proxy.opts);
               var ctx               = fetch.req.create(params);
               ctx.url               = url;
-              ctx.request           = request.espruino(proxy.opts,res=>fetch.proxy.response(ctx,res));
+              ctx.request           = fetch.request(proxy.opts,res=>fetch.proxy.response(ctx,res));
               
               fetch.error(ctx,'req');
               ctx.request.end(proxy.body);
@@ -108,9 +107,6 @@ function fetch(url,opts,params){
               fetch.res.create(ctx,'proxy');
               
         }//response
-        
-        fetch.proxy.url     = proxy;
-        fetch.debug         = false;
   //:
         fetch.parse=function(url,opts){
                                                                                 //console.log('fetch.parse');
@@ -280,9 +276,14 @@ function fetch(url,opts,params){
         
   //:
   
-        var request   = {};
+        fetch.request=function(opts,callback){
         
-        request.espruino=function(opts,callback){
+              var result    = fetch.request[fetch.mode](opts,callback);
+              return result;
+              
+        }//request
+        
+        fetch.request.espruino=function(opts,callback){
         
               var req   = http.request(opts,function(res){
               
@@ -293,7 +294,7 @@ function fetch(url,opts,params){
               
         }//espruino
         
-        request.moddable=function(){
+        fetch.request.moddable=function(){
         
               let request   = new Request({
                   host        : 'raw.githubusercontent.com',
@@ -321,4 +322,11 @@ function fetch(url,opts,params){
               }
               
         }//request
+  //:
+        fetch.proxy.url     = FETCH_PROXY;
+        fetch.debug         = false;
+        fetch.mode          = 'espruino';
+        
+        fetch.config=function(){
+        }//config
         
