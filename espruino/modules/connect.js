@@ -1,3 +1,16 @@
+
+
+
+/*
+
+//espruino.connect:d
+
+17-11-24
+
+
+*/
+
+  
         var connect           = {};
         connect.ct            = 0;
         connect.max           = 5;
@@ -89,4 +102,5 @@
                                       }
                                       
                                 }//info
+                                
                                 
