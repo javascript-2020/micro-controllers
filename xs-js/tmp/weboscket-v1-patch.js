@@ -163,7 +163,7 @@ function createBuffers(console){
         buffers.add.arraybuffer       = function(buf){
         
                                               [...arguments].forEach((buf,i)=>{
-                                                                                console.log('buffers.add.arraybuffer',i,'\n');
+                                                                                console.log('buffers.add.arraybuffer',i);
                                                     var uint8   = new Uint8Array(buf);
                                                     buffers.mem.push(uint8);
                                                     
