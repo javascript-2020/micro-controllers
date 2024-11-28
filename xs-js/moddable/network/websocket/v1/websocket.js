@@ -28,6 +28,8 @@ import {Socket, Listener} from 'socket';
 import Logical from 'logical';
 import {Digest} from 'crypt';
 import Timer from 'timer';
+import URL from 'url';
+import SecureSocket from 'securesocket';
 
 /*
 state:
@@ -300,7 +302,7 @@ export class Client {
         
 function callback(message, value) {
       var console = this.console;
-      
+                                                                                console.log('client.callback',message);
       let socket = this.socket;
       
       if (1 == message) {
@@ -424,7 +426,7 @@ function callback(message, value) {
   
             if(3===this.state){
                                                                                 //  receive message
-                                                                                var df        = false;
+                                                                                var df        = true;
                   var buffers   = this.buffers;
                   
                   var exit      = false;
@@ -699,6 +701,212 @@ function server(message, value, etc) {
 
 
 
+  //WebSocket:
+  
+  
+        WebSocket.CONNECTING    = 0;
+        WebSocket.OPEN          = 1;
+        WebSocket.CLOSING       = 2;
+        WebSocket.CLOSED        = 3;
+        
+        
+        export function WebSocket(url,protocols,options){
+                                                                                var df    = true;
+                                                                                if(options && 'df' in options){
+                                                                                      df    = options.df;
+                                                                                }
+                                                                                var console   = {};
+                                                                                console.log   = function(){trace([...arguments].join(' ')+'\n')};
+              var listeners                 = {};
+              listeners.open                = [];
+              listeners.close               = [];
+              listeners.message             = [];
+              listeners.error               = [];
+              
+              
+              var ws                        = {};
+              ws[Symbol.toStringTag]        = 'WebSocket';
+              ws.readyState                 = WebSocket.CONNECTING;
+              ws.url                        = url;
+              ws.extensions                 = '';
+              ws.protocol                   = '';
+              ws.bufferedAmount             = 0;
+              ws.binaryType                 = 'arraybuffer';
+              
+              ws.onopen                     = null;
+              ws.onclose                    = null;
+              ws.onerror                    = null;
+              ws.onmessage                  = null;
+              
+              ws.send                       = function(txt){socket.write(txt)};
+              ws.send.json                  = function(json){ws.send(JSON.stringify(json,null,4))};
+              ws.close                      = function(){socket.close()};
+              
+              ws.addEventListener           = addeventlistener;
+              ws.removeEventListener        = removeeventlistener;
+              ws.on                         = on;
+              ws.removeListener             = removelistener;
+              
+              
+              var opts                      = build();
+              var socket                    = new Client(opts);
+              socket.callback               = callback;
+              
+              
+              return ws;
+              
+              
+              function callback(message,value){
+                                                                                df && console.log('callback',message);
+                    switch(message){
+                    
+                      case Client.connect           :
+                                                                                df && console.log('websocket connected');
+                                                      break;
+                      case Client.handshake         :
+                                                                                df && console.log('websocket handshake');
+                                                      ws.readyState   = WebSocket.OPEN;
+                                                      if(typeof ws.onopen=='function'){
+                                                            ws.onopen();
+                                                      }
+                                                      call('open');
+                                                      
+                                                      break;
+                      case Client.receive           :
+                                                                                df && console.log('websocket receive');
+                                                                                df && console.log(value);
+                                                      var e   = {data:value};
+                                                      if(typeof ws.onmessage=='function'){
+                                                            ws.onmessage(e);
+                                                      }
+                                                      call('message',e);
+                                                      
+                                                      break;
+                      case Client.disconnect        :
+                                                                                df && console.log('websocket disconnected');
+                                                      ws.readyState   = WebSocket.CLOSED;
+                                                      if(typeof ws.onclose=='function'){
+                                                            ws.onclose();
+                                                      }
+                                                      call('close');
+                                                      
+                                                      break;
+                    }//switch
+                    
+              }//callback
+              
+              
+              function call(name,args=[]){
+              
+                    if(!Array.isArray(args)){
+                          args    = [args];
+                    }
+                    listeners[name].forEach(o=>o.callback.apply(null,args));
+                    
+              }//call
+              
+              
+              function removelistener(name,callback){
+              
+                    removeeventlistener(name,callback,false);
+                    
+              }//removelistener
+              
+              
+              function on(name,callback){
+              
+                    addeventlistnener(name,callback,false);
+                    
+              }//on
+              
+              
+              function removeeventlistener(name,callback,capture){
+              
+                    if(!listeners[name]){
+                          return;
+                    }
+                    var index   = listeners[name].findIndex(o=>o.name===name && o.callback===callback && o.capture===capture);
+                    if(index==-1){
+                          return;
+                    }
+                    listeners[name].splice(index,1);
+                    
+              }//removeeventlistener
+              
+              
+              function addeventlistener(name,callback,capture){
+              
+                    if(!listeners[name]){
+                          return;
+                    }
+                    listeners[name].push({callback,capture});
+                    
+              }//addeventlistener
+              
+              
+              function build(){
+              
+                    var parts   = new URL(url);
+                    var opts    = {};
+                    
+                    
+                    if(parts.protocol=='ws:'){
+                          opts.port                   = parts.port||80;
+                    }else{
+                          opts.port                   = parts.port||443;
+                          opts.Socket                 = SecureSocket;
+                          opts.secure                 = {};
+                          opts.secure.verify          = false;
+                          if(options && 'rejectUnauthorized' in options){
+                                opts.secure.verify    = options.rejectUnauthorized;
+                          }
+                          if(options && 'verify' in options){
+                                opts.secure.verify    = options.verify;
+                          }
+                    }
+                    
+                    if(ip(parts.hostname)){
+                          opts.address                = parts.hostname;
+                    }else{
+                          opts.host                   = parts.hostname;
+                    }
+                    opts.path             = parts.pathname;
+                    
+                    if(options && options.headers){
+                          opts.headers    = options.headers;
+                    }
+                    
+                    return opts;
+                    
+              }//build
+              
+              
+              function ip(value){
+              
+                    var parts   = value.split('.');
+                    if(parts.length!=4){
+                          return false;
+                    }
+                    
+                    for(var i=0;i<4;i++){
+                    
+                          var num     = parts[i];
+                          var n       = Math.floor(Number(num));
+                          var test    = (String(n)===num && n!==Infinity && n>=0);
+                          if(!test){
+                                return false;
+                          }
+                          
+                    }//for
+                    return true;
+                    
+              }//ip
+              
+        }//WebSocket
+        
+        
+        
+        
 Server.connect = 1;
 Server.handshake = 2;
 Server.receive = 3;
@@ -715,9 +923,5 @@ Object.freeze(Client.prototype);
 export default Object.freeze({
       Client,
       Server,
+      WebSocket,
 });
-
-
-
-
-
