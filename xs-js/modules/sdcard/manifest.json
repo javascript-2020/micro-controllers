@@ -7,16 +7,12 @@
       "modules": {
         "*": [
           "./sd",
-          "./sdcard"
+          "./esp-idf/sdcard"
         ]
       },
       "preload": [
         "sd"
       ]
     }
-  },
-"build":{
-    "C_FLAGS_SUBPLATFORM":"-IC:/Espressif/frameworks/esp-idf-v5.4.1/components/esp_hw_support/include -IC:/Espressif/frameworks/esp-idf-v5.4.1/components/esp_hw_support/include/soc -IC:/Espressif/frameworks/esp-idf-v5.4.1/components/esp_hw_support/include/soc/esp32s3 -IC:/Espressif/frameworks/esp-idf-v5.4.1/components/esp_hw_support/dma/include -IC:/Espressif/frameworks/esp-idf-v5.4.1/components/esp_hw_support/ldo/include -IC:/Espressif/frameworks/esp-idf-v5.4.1/components/esp_hw_support/debug_probe/include -IC:/Espressif/frameworks/esp-idf-v5.4.1/components/esp_hw_support/port/esp32s3/. -IC:/Espressif/frameworks/esp-idf-v5.4.1/components/esp_hw_support/port/esp32s3/include -IC:\\Espressif\\frameworks\\esp-idf-v5.4.1\\components\\esp_driver_sdspi\\include"
-  }
-  
+  }  
 }
