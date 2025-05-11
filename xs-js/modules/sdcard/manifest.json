@@ -16,10 +16,7 @@
     }
   },
 "build":{
-    "C_FLAGS_SUBPLATFORM":"
-      -IC:\\Espressif\\frameworks\\esp-idf-v5.4.1\\components\\esp_hw_support\\dma\\include
-      -IC:\\Espressif\\frameworks\\esp-idf-v5.4.1\\components\\esp_driver_sdspi\\include
-    "
+    "C_FLAGS_SUBPLATFORM":"-IC:\\Espressif\\frameworks\\esp-idf-v5.4.1\\components\\esp_hw_support\\dma\\include -IC:\\Espressif\\frameworks\\esp-idf-v5.4.1\\components\\esp_driver_sdspi\\include"
   }
   
 }
