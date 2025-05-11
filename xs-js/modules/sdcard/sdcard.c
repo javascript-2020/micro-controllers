@@ -25,6 +25,11 @@
 
 
 
+
+  //meeee
+  
+  
+
         #include <string.h>
         #include <sys/unistd.h>
         #include <sys/stat.h>
@@ -37,6 +42,121 @@
         #include "esp_heap_caps.h"
         #include "esp_err.h"
         #include "esp_log.h"
+
+
+
+
+
+
+
+
+        typedef struct {
+              const char*     mount;
+              sdmmc_card_t*   card;
+              sdmmc_host_t*   host;
+        } sd_card_t;
+        
+        sd_card_t** list;
+        
+        size_t list_len     = 0;
+        size_t list_size    = 1;
+        
+        void list_add(const char* mount,sdmmc_host_t* host,sdmmc_card_t* card){
+        
+              size_t size           = sizeof(sdmmc_host_t);
+              sdmmc_host_t* host2   = (sdmmc_host_t*)heap_caps_malloc(size,MALLOC_CAP_8BIT);
+              memcpy(host2,host,size);
+              
+              size                  = sizeof(sd_card_t);
+              sd_card_t* sd_card    = (sd_card_t*)heap_caps_malloc(size,MALLOC_CAP_8BIT);
+              sd_card->mount        = mount;
+              sd_card->host         = host2;
+              sd_card->card         = card;
+              
+              list[list_len]        = sd_card;
+              list_len++;
+              
+        }//list_add
+        
+        sd_card_t* list_find(const char* mount){
+        
+              sd_card_t* ptr;
+              int cmp;
+              
+              for(int i=0;i<list_len;i++){
+              
+                    ptr   = list[i];
+                    cmp   = strcmp(ptr->mount,mount);
+                    if(cmp==0){
+                          break;
+                    }
+                    ptr   = NULL;
+                    
+              }//for
+              return ptr;
+              
+        }//find
+        
+        void list_rem(const char* mount){
+        
+              sd_card_t* ptr;
+              int cmp;
+              int i;
+              
+              for(i=0;i<list_len;i++){
+              
+                    ptr   = list[i];
+                    cmp   = strcmp(ptr->mount,mount);
+                    if(cmp==0){
+                          break;
+                    }
+                    ptr   = NULL;
+                    
+              }//for
+              
+              if(!ptr){
+                    return;
+              }
+              
+              heap_caps_free(ptr->host);
+              heap_caps_free(ptr);
+              
+              if(i<list_len-1){
+                    for(int j=i+1;j<list_len;j++){
+                    
+                          list[j-1]   = list[j];
+                          
+                    }//for
+                    
+              }
+              
+              list_len--;
+              
+        }//list_rem
+        
+        
+  //:
+  
+  
+        void version(){
+        
+              ESP_LOGI(TAG,"version 2.0");
+              
+        }//version
+        
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
