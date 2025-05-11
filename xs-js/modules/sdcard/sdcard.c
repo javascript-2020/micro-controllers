@@ -48,11 +48,11 @@
         static const char *TAG          = "[ sdcard ]";
         
         
-        int cs      = 40;
-        int clk     = 39;
-        int mosi    = 42;
-        int miso    = 41;
-        char[]      = "/sdcard";
+        int cs          = 40;
+        int clk         = 39;
+        int mosi        = 42;
+        int miso        = 41;
+        char[] mount    = "/sdcard";
 
 
 
