@@ -52,7 +52,7 @@
         int clk         = 39;
         int mosi        = 42;
         int miso        = 41;
-        char[] mount    = "/sdcard";
+        char mount[]    = "/sdcard";
 
 
 
