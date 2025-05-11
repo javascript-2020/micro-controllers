@@ -10,7 +10,7 @@
 
 */
 
-        #include "sdcard.h"
+        //#include "sdcard.h"
         
         #include <string.h>
         #include <sys/unistd.h>
