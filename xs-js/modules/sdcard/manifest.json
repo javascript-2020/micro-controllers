@@ -7,7 +7,7 @@
       "modules": {
         "*": [
           "./sd",
-          "./esp32/sdcardspi"
+          ".sdcard"
         ]
       },
       "preload": [
