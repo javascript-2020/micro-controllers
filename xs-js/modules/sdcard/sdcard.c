@@ -296,7 +296,8 @@
               result    = spi_bus_initialize(host.slot,&bus_cfg,SDSPI_DEFAULT_DMA);
               if(result!=ESP_OK){
                                                                                 ESP_LOGE(TAG, "Failed to initialize bus.");
-                    return result;
+                    xsmcSetBoolean(xsResult,false);                                                                                
+                    return;
               }
               
                                                                                 // Options for mounting the filesystem.
@@ -321,7 +322,8 @@
                                                                                 ESP_LOGE(TAG, "Failed to initialize the card (%s). "
                                                                                          "Make sure SD card lines have pull-up resistors in place.", esp_err_to_name(result));
                     }
-                    return result;
+                    xsmcSetBoolean(xsResult,false);
+                    return;
               }
                                                                                 ESP_LOGI(TAG, "Filesystem mounted");
 /*
