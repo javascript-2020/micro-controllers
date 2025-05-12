@@ -18,8 +18,20 @@ idf.py create-project-from-example "javascript-2020/sdcard:sdcard-test"
 ```
 
 Then build as usual:
+
 ```bash
 cd sdcard-test
+```
+
+set-target
+
+```bash
+idf.py set-target esp32s3
+```
+
+build
+
+```bash
 idf.py build
 ```
 
