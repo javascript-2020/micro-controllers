@@ -1,0 +1,26 @@
+
+
+
+
+        {
+        
+            	"modules": {
+                		"*": [
+                			    "$(sed)/micro-controllers/xs-js/tmp/sdcard/sdcard/*",
+            	            "$(sed)/micro-controllers/xs-js/libs/js/console/console.manifest.json"
+                		]
+            	},
+             
+            	"platforms": {
+                	  "esp32": {
+                    	    "dependency": [
+                        	      {"namespace":"javascript-2020","name":"sdcard","version":"*"}
+                    	    ]
+                	  }
+            	 }
+              
+        }
+        
+        
+        
+        
