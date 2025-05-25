@@ -19,7 +19,8 @@
 (()=>{
                                                                                 console.log('sdcard-test.js');
                                                                                 
-/*
+if(1){
+
         var root    = '/sdcard';
         var cs      = 40;
         var clk     = 39;
@@ -32,8 +33,11 @@
                                                                                 console.log(error);
               return;
         }
-*/
+        
+}
 
+
+if(0){
 
         var root          = '/sdcard';
         var clk           = 14;
@@ -50,8 +54,10 @@
               return;
         }
         
-        
-        
+}
+
+
+
         var {error}   = card.dir.list.print('');
         
         if(error){
