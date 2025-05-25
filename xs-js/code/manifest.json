@@ -1,0 +1,20 @@
+
+
+
+        {
+        
+            	"include"   : [
+             
+            	      "sdcard/sdcard.manifest.json",
+            	      "console/console.manifest.json",
+                   
+            	      "$(MODDABLE)/modules/files/file/manifest.json"
+                   
+            	],
+            	"creation"    : {"main":"sdcard-test.js"},
+            	"modules"     : {"*":["./sdcard-test.js"]}
+             
+        }
+        
+        
+        
