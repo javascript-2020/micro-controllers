@@ -13,16 +13,23 @@ cd sdcard-test
 
 optional
 
+```
 windows command prompt : set UPLOAD_PORT=COM10
+```
+
+```
 bash : export UPLOAD_PORT=
+```
 
-
+```
 mcconfig -d -m -p esp32/esp32s3
+```
 
 or
 
+```
 mcconfig -d -m -p esp32
-
+```
 
 note:
 
