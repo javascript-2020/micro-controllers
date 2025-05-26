@@ -60,7 +60,7 @@ if(0){
         var {error}   = card.dir.list.print('');
         
         if(error){
-              console.log('dir.list.print error');
+              console.log('dir.list.print error',error);
               return;
         }
         
@@ -68,7 +68,7 @@ if(0){
         var {error}   = card.file.truncate('hello.txt');
         
         if(error){
-              console.log('file.truncate',error);
+              console.log('file.truncate error',error);
               return;
         }
         
@@ -80,7 +80,7 @@ if(0){
                     var {error}   = card.file.append('hello.txt',''+j);
                     
                     if(error){
-                          console.log('file.append error');
+                          console.log('file.append error',error);
                           return;
                     }
                     
@@ -92,7 +92,7 @@ if(0){
         var {error}   = card.file.write.offset('hello.txt',5,'xxxxx');
         
         if(error){
-              console.log('file.write.offset error');
+              console.log('file.write.offset error',error);
               return;
         }
         
@@ -100,45 +100,45 @@ if(0){
         var {buf,error}   = card.file.read.offset('hello.txt',0,10);
         
         if(error){
-              console.log('read.offset',error);
+              console.log('read.offset error',error);
               return;
         }
         
-        disp('read.offset',buf);
+        disp('disp : read.offset',buf);
         
         
         var {num,error}   = card.file.read.until('hello.txt','x',0);
         
         if(error){
-              console.log('file.read.until error');
+              console.log('file.read.until error',error);
               return;
         }
         
         var {error}   = card.file.print('hello.txt');
         
         if(error){
-              console.log('file.print error');
+              console.log('file.print error',error);
               return;
         }
         
         var {error}   = card.file.stat.print('hello.txt');
         
         if(error){
-              console.log('file.stat.print error');
+              console.log('file.stat.print error',error);
               return;
         }
         
         var {error}   = card.file.copy('hello.txt','foo.txt');
         
         if(error){
-              console.log('file.copy.error');
+              console.log('file.copy error',error);
               return;
         }
         
         var {error}   = card.file.rename('foo.txt','bar.txt');
         
         if(error){
-              console.log('file.rename error');
+              console.log('file.rename error',error);
               return;
         }
         
