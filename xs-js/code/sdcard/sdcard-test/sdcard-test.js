@@ -12,7 +12,6 @@
 
 
         import console from 'console';
-        import {File,Iterator,System} from 'file';
         import sd from 'sdcard';
         
         
