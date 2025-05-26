@@ -26,7 +26,7 @@ if(1){
         var mosi    = 42;
         var miso    = 41;
         
-        var {error,card}    = sd.spi.mount(root,cs,clk,mosi,miso);
+        var {card,error}    = sd.spi.mount(root,cs,clk,mosi,miso);
         if(error){
                                                                                 console.log('failed to mount card');
                                                                                 console.log(error);
@@ -46,7 +46,7 @@ if(0){
         var d2            = 12;
         var d3            = 13;
         
-        var{error,card}   = sd.sdmmc.mount.data4(root,clk,cmd,d0,d1,d2,d3);
+        var{card,error}   = sd.sdmmc.mount.data4(root,clk,cmd,d0,d1,d2,d3);
         if(error){
               console.log('failed to mount card');
               console.log(error);
